@@ -16,6 +16,19 @@
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
 
+        <!-- Department -->
+        <div class="mt-4">
+            <x-input-label for="department" :value="__('Department')" />
+            <select id="department" name="department" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
+                <option value="" disabled {{ old('department') ? '' : 'selected' }}>{{ __('Select a department') }}</option>
+                <option value="Financeiro" {{ old('department') === 'Financeiro' ? 'selected' : '' }}>Financeiro</option>
+                <option value="Comercial" {{ old('department') === 'Comercial' ? 'selected' : '' }}>Comercial</option>
+                <option value="Tecnologia" {{ old('department') === 'Tecnologia' ? 'selected' : '' }}>Tecnologia</option>
+                <option value="RH" {{ old('department') === 'RH' ? 'selected' : '' }}>RH</option>
+            </select>
+            <x-input-error :messages="$errors->get('department')" class="mt-2" />
+        </div>
+
         <!-- Password -->
         <div class="mt-4">
             <x-input-label for="password" :value="__('Password')" />
