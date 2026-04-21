@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\TicketRequest;
 use App\Models\Ticket;
+use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class TicketController extends Controller
@@ -12,12 +14,30 @@ class TicketController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(): View
+    public function index(Request $request): View
     {
-        $tickets = Ticket::with('user:id,name,department')
-            ->where('user_id', auth()->id())
+        $validated = $request->validate([
+            'status' => ['nullable', 'string', Rule::in(['aberto', 'em_andamento', 'resolvido', 'fechado'])],
+            'department' => ['nullable', 'string', Rule::in(['Financeiro', 'Comercial', 'Tecnologia', 'RH'])],
+        ]);
+
+        $query = Ticket::with('user:id,name,department')
+            ->where('user_id', auth()->id());
+
+        if (! empty($validated['status'])) {
+            $query->where('status', $validated['status']);
+        }
+
+        if (! empty($validated['department'])) {
+            $query->whereHas('user', function ($userQuery) use ($validated) {
+                $userQuery->where('department', $validated['department']);
+            });
+        }
+
+        $tickets = $query
             ->orderByDesc('created_at')
-            ->paginate(10);
+            ->paginate(10)
+            ->withQueryString();
 
         return view('tickets.index', compact('tickets'));
     }
@@ -74,6 +94,22 @@ class TicketController extends Controller
         $ticket->update($request->validated());
 
         return redirect()->route('tickets.index')->with('success', 'Chamado atualizado com sucesso.');
+    }
+
+    /**
+     * Update only ticket status from the listing screen.
+     */
+    public function updateStatus(Request $request, Ticket $ticket): RedirectResponse
+    {
+        abort_unless($ticket->user_id === auth()->id(), 403);
+
+        $validated = $request->validate([
+            'status' => ['required', 'string', Rule::in(['aberto', 'em_andamento', 'resolvido', 'fechado'])],
+        ]);
+
+        $ticket->update(['status' => $validated['status']]);
+
+        return redirect()->back()->with('success', 'Status atualizado com sucesso.');
     }
 
     /**
